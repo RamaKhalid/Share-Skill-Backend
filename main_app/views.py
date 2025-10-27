@@ -22,58 +22,119 @@ class SignupUserView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username= request.data.get("username")
-        first_name = request.data.get("first_name")
-        last_name = request.data.get("last_name")
-        email = request.data.get("email")
-        password = request.data.get("password")
+        try:
+            username= request.data.get("username")
+            first_name = request.data.get("first_name")
+            last_name = request.data.get("last_name")
+            email = request.data.get("email")
+            password = request.data.get("password")
+            
+            if not username:
+                return Response(
+                    {"error": "Please provide an username"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not first_name:
+                return Response(
+                    {"error": "Please provide a first name"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not last_name:
+                return Response(
+                    {"error": "Please provide a Last name"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if  not password :
+                return Response(
+                    {"error": "Please provide a password"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if  not email:
+                return Response(
+                    {"error": "Please provide an email"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            if User.objects.filter(username=username).exists():
+                return Response(
+                    {'error': "User Already Exisits"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            user = User.objects.create_user(
+                username=username, 
+                email=email, 
+                password=password,
+                first_name = first_name,
+                last_name = last_name
+            )
 
-        if not username:
-            return Response(
-                {"error": "Please provide an username"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not first_name:
-            return Response(
-                {"error": "Please provide a first name"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not last_name:
-            return Response(
-                {"error": "Please provide a Last name"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if  not password :
-            return Response(
-                {"error": "Please provide a password"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if  not email:
-            return Response(
-                {"error": "Please provide an email"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        if User.objects.filter(username=username).exists():
-            return Response(
-                {'error': "User Already Exisits"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        user = User.objects.create_user(
-            username=username, 
-            email=email, 
-            password=password,
-            first_name = first_name,
-            last_name = last_name
-        )
+            # profile_data= {
+            #     'birth_date' : request.data.get("birth_date"),
+            #     'level' : request.data.get("level"),
+            #     'phone' : request.data.get("phone"),
+            #     'user': request.data.get('user')
+            #     }
 
-        return Response(
-            {"id": user.id, "username": user.username, "first_name":first_name, "last_name":last_name, "email": user.email, },
-            status=status.HTTP_201_CREATED,
-        )
-        
+            # serializer = UserProfileSerializer(data = profile_data)
+            # if serializer.is_valid():
+            #     serializer.save()
+            #     queryset = UserProfile.objects.get(user=user.id)
+            #     serializer = UserProfileSerializer(queryset, many=True)
+            #     return Response(serializer.data, status=status.HTTP_200_OK)
+            # else:
+            #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+            return Response(
+                {"id": user.id, "username": user.username, "first_name":first_name, "last_name":last_name, "email": user.email, },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class CurrentUserView(APIView):
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+class UserProfileIndex(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, user_id):
+        try:
+            queryset = UserProfile.objects.get(user= user_id)
+            serializer = UserProfileSerializer(queryset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    # use it after sign up immediately
+    def post(self, request, user_id):
+        try:
+            serializer = UserProfileSerializer(data = request.data)
+            if serializer.is_valid():
+                serializer.save()
+                queryset = UserProfile.objects.filter(user=user_id)
+                serializer = UserProfileSerializer(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def put(self, request, user_id):
+        try:
+            queryset = get_object_or_404(UserProfile, user = user_id)
+            serializer = UserProfileSerializer(queryset, data= request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
 
 
