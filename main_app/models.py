@@ -1,22 +1,29 @@
 from django.db import models
 from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
+from phonenumber_field.phonenumber import PhoneNumber
 from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
 
 User = get_user_model()
-
+LEVELS=(
+    ('B', 'Beginner' ),
+    ('I', 'Intermediate'),
+    ('E', 'Expert')
+)
 # Add more fields to your user
 class UserProfile(models.Model):
     birth_date = models.DateField()
-    level = models.CharField()
-    phone = models.Ph
+    level = models.CharField(choices=LEVELS, default=LEVELS[0][0])
+    phone = PhoneNumberField(null=False, blank=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 
 class Skill (models.Model):
     type= models.CharField (max_length=100)
     name= models.CharField (max_length=100)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    
 
     def __str__(self):
         return self.name
@@ -27,6 +34,8 @@ class Experience (models.Model):
     title = models.CharField (max_length=100)
     description= models.CharField (max_length=100)
     place= models.CharField (max_length=100)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+
 
 
 class Meeting (models.Model):
@@ -34,6 +43,7 @@ class Meeting (models.Model):
     time= models.TimeField ('Meeting data')
     is_complete= models.BooleanField ()
     rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)])
+    user = models.ManyToManyField(User)
 
     def __str__(self):
         return f'Metting on:{self.date } - {self.time}'
@@ -41,6 +51,8 @@ class Meeting (models.Model):
 class Certificate (models.Model):
     type= models.CharField (max_length=100)
     name= models.CharField (max_length=100)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+
 
     def __str__(self):
         return self.name
