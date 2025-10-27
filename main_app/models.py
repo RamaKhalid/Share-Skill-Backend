@@ -1,8 +1,19 @@
 from django.db import models
 from django.core.validators import MaxValueValidator
-
+from django.contrib.auth import get_user_model
+from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
-#
+
+User = get_user_model()
+
+# Add more fields to your user
+class UserProfile(models.Model):
+    birth_date = models.DateField()
+    level = models.CharField()
+    phone = models.Ph
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+
 class Skill (models.Model):
     type= models.CharField (max_length=100)
     name= models.CharField (max_length=100)
