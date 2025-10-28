@@ -12,21 +12,32 @@ LEVELS=(
     ('E', 'Expert')
 )
 # Add more fields to your user
+class Skill (models.Model):
+    type= models.CharField (max_length=100)
+    name= models.CharField (max_length=100)
+    def __str__(self):
+        return self.name
+
+class Meeting (models.Model):
+    date= models.DateField ('Meeting data')
+    time= models.TimeField ('Meeting data')
+    is_complete= models.BooleanField ()
+    rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)])
+    user = models.ManyToManyField(User)
+
+    def __str__(self):
+        return f'Metting on:{self.date } - {self.time}'
+
 class UserProfile(models.Model):
     birth_date = models.DateField()
     level = models.CharField(choices=LEVELS, default=LEVELS[0][0])
     phone = PhoneNumberField(null=False, blank=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    skills =  models.ManyToManyField(Skill, blank=True)
+    meetings =  models.ManyToManyField(Meeting, blank=True)
 
+ 
 
-class Skill (models.Model):
-    type= models.CharField (max_length=100)
-    name= models.CharField (max_length=100)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    
-
-    def __str__(self):
-        return self.name
     
 
 class Experience (models.Model):
@@ -38,15 +49,6 @@ class Experience (models.Model):
 
 
 
-class Meeting (models.Model):
-    date= models.DateField ('Meeting data')
-    time= models.TimeField ('Meeting data')
-    is_complete= models.BooleanField ()
-    rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)])
-    user = models.ManyToManyField(User)
-
-    def __str__(self):
-        return f'Metting on:{self.date } - {self.time}'
 
 class Certificate (models.Model):
     type= models.CharField (max_length=100)

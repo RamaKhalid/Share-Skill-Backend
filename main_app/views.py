@@ -69,27 +69,25 @@ class SignupUserView(APIView):
                 last_name = last_name
             )
 
-            # profile_data= {
-            #     'birth_date' : request.data.get("birth_date"),
-            #     'level' : request.data.get("level"),
-            #     'phone' : request.data.get("phone"),
-            #     'user': request.data.get('user')
-            #     }
+            profile_data= {
+                'birth_date' : request.data.get("birth_date"),
+                'level' : request.data.get("level"),
+                'phone' : request.data.get("phone"),
+                'user': request.data.get('user')
+                }
 
-            # serializer = UserProfileSerializer(data = profile_data)
-            # if serializer.is_valid():
-            #     serializer.save()
-            #     queryset = UserProfile.objects.get(user=user.id)
-            #     serializer = UserProfileSerializer(queryset, many=True)
-            #     return Response(serializer.data, status=status.HTTP_200_OK)
-            # else:
-            #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer = UserProfileSerializer(data = profile_data)
+            if serializer.is_valid():
+                serializer.save()
+                queryset = UserProfile.objects.get(user=user.id)
+                serializer = UserProfileSerializer(queryset, many=True)
+                # return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(
+                    serializer.data,{"id": user.id, "username": user.username, "first_name":first_name, "last_name":last_name, "email": user.email, },
+                    status=status.HTTP_201_CREATED,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-            return Response(
-                {"id": user.id, "username": user.username, "first_name":first_name, "last_name":last_name, "email": user.email, },
-                status=status.HTTP_201_CREATED,
-            )
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -154,20 +152,44 @@ class SkillIndex (APIView):
     # When we make a GET request, return All of the feedings that relate to a specific cat
         try:
             serializer = SkillSerializer(data=request.data)
-        # if Skill.objects.filter(=id).exists():
-        #         return Response(
-        #             {'error': "skill Already Exisits"},
-        #             status=status.HTTP_400_BAD_REQUEST
-        #         )
+            skill_id = request.data.get('id') 
+            
+            if Skill.objects.filter(id = skill_id).exists():
+                    return Response(
+                        {'error': "skill Already Exisits"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
         
             if serializer.is_valid():
                 serializer.save()
-                queryset = Skill.objects.filter(owner=user_id)
-                serializer = SkillSerializer(queryset, many=True)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AssociateSkill(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, user_id, skill_id):
+        user = get_object_or_404(UserProfile, user_id=user_id)
+        skill = get_object_or_404(Skill, id=skill_id)
+        user.skills.add(skill)
+
+        skills_user_does_have = Skill.objects.filter(userprofile=user_id)
+        skills_user_does_not_have = Skill.objects.exclude(
+            id__in=user.skills.all().values_list("id")
+        )
+
+        return Response(
+            {
+                "skills_user_does_have": SkillSerializer(skills_user_does_have, many=True).data,
+                "skills_user_does_not_have": SkillSerializer(
+                    skills_user_does_not_have, many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
 class Skilldetail (APIView):
     permission_classes = [AllowAny]
@@ -213,6 +235,13 @@ class CertificateIndex(APIView):
     def post (self, request, user_id):
         try:
             serializer = CertificateSerializer(data=request.data)
+            certificate_id = request.data.get('id') 
+            
+            if Certificate.objects.filter(id = certificate_id).exists():
+                    return Response(
+                        {'error': "Certificate Already Exisits"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
             if serializer.is_valid():
                 serializer.save()
                 queryset = Certificate.objects.filter(owner=user_id)
