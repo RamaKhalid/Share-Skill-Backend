@@ -23,7 +23,6 @@ class Meeting (models.Model):
     time= models.TimeField ('Meeting data')
     is_complete= models.BooleanField ()
     rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)])
-    user = models.ManyToManyField(User)
 
     def __str__(self):
         return f'Metting on:{self.date } - {self.time}'
