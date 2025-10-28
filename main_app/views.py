@@ -96,6 +96,8 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+
+
 class UserProfileIndex(APIView):
     permission_classes = [AllowAny]
     def get(self, request, user_id):
@@ -167,6 +169,8 @@ class SkillIndex (APIView):
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
 class getAllSkills(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
@@ -176,6 +180,7 @@ class getAllSkills(APIView):
             return Response(serializer.data)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class AssociateSkill(APIView):
@@ -201,6 +206,8 @@ class AssociateSkill(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+
 class DissociateSkill(APIView):
     permission_classes = [AllowAny]
 
@@ -225,6 +232,8 @@ class DissociateSkill(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
 
 class Skilldetail (APIView):
     permission_classes = [AllowAny]
@@ -254,6 +263,7 @@ class Skilldetail (APIView):
             return Response(
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 
 class CertificateIndex(APIView):
@@ -286,8 +296,7 @@ class CertificateIndex(APIView):
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-     
-        
+  
 
 class CertificateDetail(APIView):
     permission_classes = [AllowAny]
@@ -350,6 +359,34 @@ class ExperienceIndex(APIView):
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+class ExperienceDetail(APIView):
+    permission_classes = [AllowAny]
+    def put (self, request, Experience_id):
+        try:
+            queryset = get_object_or_404(Experience, id = Experience_id)
+            serializer = ExperienceSerializer(queryset, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self, request, Experience_id):
+        try:
+            queryset = get_object_or_404(Experience, id=Experience_id)
+            queryset.delete()
+            return Response(
+                {"message": f"Experience {Experience_id} has been deleted"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 

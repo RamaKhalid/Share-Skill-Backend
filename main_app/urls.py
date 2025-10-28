@@ -13,6 +13,6 @@ urlpatterns= [
     path('profile/<int:user_id>/certificate/', CertificateIndex.as_view(), name='certificate_Index'),
     path('profile/certificate/<int:cert_id>/', CertificateDetail.as_view(), name='certificate_detail'),
     path('profile/<int:user_id>/experience/', ExperienceIndex.as_view(), name='experience_Index'),
-    # path('profile/experience/<int:cert_id>/', CertificateDetail.as_view(), name='experience_detail'),
+    path('profile/experience/<int:Experience_id>/', ExperienceDetail.as_view(), name='experience_detail'),
 
 ]
