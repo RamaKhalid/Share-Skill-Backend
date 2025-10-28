@@ -80,7 +80,7 @@ class SignupUserView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 queryset = UserProfile.objects.get(user=user.id)
-                serializer = UserProfileSerializer(queryset, many=True)
+                serializer = UserProfileSerializer(queryset)
                 # return Response(serializer.data, status=status.HTTP_200_OK)
                 return Response(
                     serializer.data,{"id": user.id, "username": user.username, "first_name":first_name, "last_name":last_name, "email": user.email, },
@@ -149,7 +149,7 @@ class SkillIndex (APIView):
 
         
     def post (self, request, user_id):
-    # When we make a GET request, return All of the feedings that relate to a specific cat
+
         try:
             serializer = SkillSerializer(data=request.data)
             skill_id = request.data.get('id') 
@@ -166,6 +166,17 @@ class SkillIndex (APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class getAllSkills(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        try:
+            skill = Skill.objects.all()
+            serializer = SkillSerializer(skill, many=True)
+            return Response(serializer.data)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class AssociateSkill(APIView):
     permission_classes = [AllowAny]
@@ -228,7 +239,7 @@ class Skilldetail (APIView):
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def delete(self, request, skill_id):
+    def delete(self, request, user_id, skill_id):
         try:
             # Get a cat or return a 404
             queryset = get_object_or_404(Skill, id=skill_id)
@@ -280,7 +291,7 @@ class CertificateIndex(APIView):
 
 class CertificateDetail(APIView):
     permission_classes = [AllowAny]
-    def put (self, request, user_id, cert_id):
+    def put (self, request, cert_id):
         try:
             queryset = get_object_or_404(Certificate, id = cert_id)
             serializer = CertificateSerializer(queryset, data=request.data)
@@ -304,6 +315,40 @@ class CertificateDetail(APIView):
             return Response(
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
+class ExperienceIndex(APIView):
+    permission_classes = [AllowAny]
+
+    def get (self, request, user_id):
+        try:
+            queryset = Experience.objects.filter(owner=user_id)
+            serializer = ExperienceSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    def post (self, request, user_id):
+        try:
+            serializer = ExperienceSerializer(data=request.data)
+            experience_id = request.data.get('id') 
+            
+            if Experience.objects.filter(id = experience_id).exists():
+                    return Response(
+                        {'error': "Experience Already Exisits"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            if serializer.is_valid():
+                serializer.save()
+                queryset = Experience.objects.filter(owner=user_id)
+                serializer = ExperienceSerializer(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
