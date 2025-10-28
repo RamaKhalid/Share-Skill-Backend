@@ -175,7 +175,7 @@ class AssociateSkill(APIView):
         skill = get_object_or_404(Skill, id=skill_id)
         user.skills.add(skill)
 
-        skills_user_does_have = Skill.objects.filter(userprofile=user_id)
+        skills_user_does_have = Skill.objects.filter(userprofile=user.id)
         skills_user_does_not_have = Skill.objects.exclude(
             id__in=user.skills.all().values_list("id")
         )
@@ -190,6 +190,30 @@ class AssociateSkill(APIView):
             status=status.HTTP_200_OK,
         )
 
+class DissociateSkill(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, user_id, skill_id):
+        user = get_object_or_404(UserProfile, user_id=user_id)
+        skill = get_object_or_404(Skill, id=skill_id)
+        user.skills.remove(skill)
+
+        # queryset = UserProfile.objects.get(user= user_id)
+
+        skills_user_does_have = Skill.objects.filter(userprofile=user.pk)
+        skills_user_does_not_have = Skill.objects.exclude(
+            id__in=user.skills.all().values_list("id")
+        )
+
+        return Response(
+            {
+                "skills_user_does_have": SkillSerializer(skills_user_does_have, many=True).data,
+                "skills_user_does_not_have": SkillSerializer(
+                    skills_user_does_not_have, many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class Skilldetail (APIView):
     permission_classes = [AllowAny]
