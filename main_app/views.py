@@ -424,6 +424,52 @@ class MeetingDetail(APIView):
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class AssociateMetting(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, user_id, meeting_id):
+        user = get_object_or_404(UserProfile, user_id=user_id)
+        meeting = get_object_or_404(Meeting, id=meeting_id)
+        user.meetings.add(meeting)
+
+        meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
+        meetings_user_does_not_have = Meeting.objects.exclude(
+            id__in=user.meetings.all().values_list("id")
+        )
+
+        return Response(
+            {
+                "meetings_user_does_have": MeetingSerializer(meetings_user_does_have, many=True).data,
+                "meetings_user_does_not_have": MeetingSerializer(
+                    meetings_user_does_not_have, many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+
+class DissociateMeeting(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, user_id, meeting_id):
+        user = get_object_or_404(UserProfile, user_id=user_id)
+        meeting = get_object_or_404(Meeting, id=meeting_id)
+        user.meetings.remove(meeting)
+
+        meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
+        meetings_user_does_not_have = Meeting.objects.exclude(
+            id__in=user.meetings.all().values_list("id")
+        )
+
+        return Response(
+            {
+                "meetings_user_does_have": MeetingSerializer(meetings_user_does_have, many=True).data,
+                "meetings_user_does_not_have": MeetingSerializer(
+                    meetings_user_does_not_have, many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 
