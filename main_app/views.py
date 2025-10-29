@@ -18,6 +18,22 @@ from .serializers import *
 
 User = get_user_model()
 
+class Home (APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        try:
+            # user = get_object_or_404(User)
+            user = User.objects.all
+            # profile = get_object_or_404(UserProfile, user_id=user.id)
+            profile = UserProfile.objects.all
+            user_serializer = UserSerializer(user, many=True)
+            profile_serializer = UserSerializer(profile, many=True)
+            # return Response(user_serializer.data,status=status.HTTP_200_OK)
+            return Response({'user':user_serializer.data, 'profile':profile_serializer.data},status=status.HTTP_200_OK)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 class SignupUserView(APIView):
     permission_classes = [AllowAny]
 
@@ -61,13 +77,6 @@ class SignupUserView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            user = User.objects.create_user(
-                username=username, 
-                email=email, 
-                password=password,
-                first_name = first_name,
-                last_name = last_name
-            )
 
             profile_data= {
                 'birth_date' : request.data.get("birth_date"),
@@ -78,20 +87,25 @@ class SignupUserView(APIView):
 
             serializer = UserProfileSerializer(data = profile_data)
             if serializer.is_valid():
+                user = User.objects.create_user(
+                    username=username, 
+                    email=email, 
+                    password=password,
+                    first_name = first_name,
+                    last_name = last_name
+                )
                 serializer.save()
                 queryset = UserProfile.objects.get(user=user.id)
                 serializer = UserProfileSerializer(queryset)
                 # return Response(serializer.data, status=status.HTTP_200_OK)
-                return Response(
-                    serializer.data,{"id": user.id, "username": user.username, "first_name":first_name, "last_name":last_name, "email": user.email, },
-                    status=status.HTTP_201_CREATED,
-                )
+                return Response(serializer.data,status=status.HTTP_201_CREATED,)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class CurrentUserView(APIView):
+    
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)

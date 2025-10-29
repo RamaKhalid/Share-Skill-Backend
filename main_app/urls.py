@@ -3,6 +3,7 @@ from .views import *
 # from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns= [
+    path('home/', Home.as_view(), name='home'),
     path('signup/', SignupUserView.as_view(), name='signup'),
     path('profile/<int:user_id>/', UserProfileIndex.as_view(), name='profile'),
     path('skill/', SkillIndex.as_view(), name='skill'),
@@ -17,6 +18,4 @@ urlpatterns= [
     path('meeting/<int:meeting_id>/', MeetingDetail.as_view(), name='meeting'),
     path('profile/<int:user_id>/associate-meeting/<int:meeting_id>/',AssociateMetting.as_view(), name= 'assoc_meeting'),
     path('profile/<int:user_id>/dissociate-meeting/<int:meeting_id>/',DissociateMeeting.as_view(), name= 'deassoc_meeting'),
-    
-
 ]
