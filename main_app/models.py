@@ -6,11 +6,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
 
 User = get_user_model()
-LEVELS=(
-    ('B', 'Beginner' ),
-    ('I', 'Intermediate'),
-    ('E', 'Expert')
-)
+
 # Add more fields to your user
 class Skill (models.Model):
     type= models.CharField (max_length=100)
@@ -29,7 +25,7 @@ class Meeting (models.Model):
 
 class UserProfile(models.Model):
     birth_date = models.DateField()
-    level = models.CharField(choices=LEVELS, default=LEVELS[0][0])
+    level = models.CharField()
     phone = PhoneNumberField(null=False, blank=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     skills =  models.ManyToManyField(Skill, blank=True)
