@@ -18,7 +18,7 @@ class Meeting (models.Model):
     date= models.DateField ('Meeting data')
     time= models.TimeField ('Meeting data')
     is_complete= models.BooleanField ()
-    rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)])
+    rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)], blank=True, null=True)
 
     def __str__(self):
         return f'Metting on:{self.date } - {self.time}'
