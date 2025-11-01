@@ -274,6 +274,42 @@ class DissociateSkill(APIView):
             ) 
 
 
+
+class Match (APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, user_id):
+        try:
+            user = get_object_or_404(UserProfile, user_id=user_id)
+
+            skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
+            skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn') 
+              
+            users_can_teach_you =  UserSkill.objects.filter(
+                skill__in =[s.skill for s in skills_user_learn], 
+                role ='Teach')
+            
+            users_learn_by_you = UserSkill.objects.filter(user_id__in=users_can_teach_you.values_list('user_id'),role = 'Learn')
+            
+            users_can_teach_and_learn_by_you =users_learn_by_you.filter(
+                skill__in =[s.skill for s in skills_user_teach])
+            
+            user_profile_skill= UserProfile.objects.filter (id__in=users_can_teach_and_learn_by_you.values_list('user_id'))
+            user_skill= User.objects.filter (id__in=user_profile_skill.values_list('user_id'))
+            skill_data= Skill.objects.filter (id__in=users_can_teach_and_learn_by_you.values_list('skill_id'))
+            
+            # return Response(SkillSerializer(skill_data, many=True).data)
+            
+            return Response({'skill_data':SkillSerializer(skill_data, many=True).data,
+                'user_match': UserSerializer(user_skill, many=True).data,
+                'profile_user':UserProfileSerializer(user_profile_skill, many=True).data,
+                'users_can_teach_and_learn_by_you': UserSkillSerializer(users_can_teach_and_learn_by_you, many=True).data,
+                'users_can_teach_you': UserSkillSerializer(users_learn_by_you, many=True).data}, status=status.HTTP_200_OK,)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
 class Skilldetail (APIView):
     permission_classes = [AllowAny]
     def put (self, request, skill_id):

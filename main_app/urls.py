@@ -23,4 +23,5 @@ urlpatterns= [
     path('meeting/<int:meeting_id>/', MeetingDetail.as_view(), name='meeting'),
     path('profile/<int:user_id>/associate-meeting/<int:meeting_id>/',AssociateMetting.as_view(), name= 'assoc_meeting'),
     path('profile/<int:user_id>/dissociate-meeting/<int:meeting_id>/',DissociateMeeting.as_view(), name= 'deassoc_meeting'),
+    path('match/<int:user_id>', Match.as_view(), name= 'Match')
 ]
