@@ -118,18 +118,24 @@ class UserProfileIndex(APIView):
             Profile = UserProfile.objects.get(user= user_id)
             Profile_serializer = UserProfileSerializer(Profile)
             user_serializer = UserSerializer(user)
+            
+            skills_user_teach = UserSkill.objects.filter(user_id=Profile.id , role = 'Teach')
+            skills_user_learn = UserSkill.objects.filter(user_id=Profile.id , role = 'Learn')
 
-            skills_user_does_have = Skill.objects.filter(userprofile= Profile.id)
+            teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
+            learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
+
+
+            # skills_user_does_have = UserSkill.objects.filter(user_id= Profile.id)
 
             skills_user_does_not_have = Skill.objects.exclude(
                 id__in=Profile.skills.all().values_list("id")
             )
 
             data = Profile_serializer.data
-            data["skills_user_has"] = SkillSerializer(skills_user_does_have, many=True).data
-            data["skills_user_does_not_have"] = SkillSerializer(
-                skills_user_does_not_have, many=True
-            ).data
+            data['skills_user_teach']= SkillSerializer( teach_skill, many=True).data
+            data['skills_user_learn']=  SkillSerializer(learn_skill, many=True).data
+            data["skills_user_does_not_have"] = SkillSerializer(skills_user_does_not_have, many=True).data
 
             return Response({'user':user_serializer.data, 'profile':data}, status=status.HTTP_200_OK)
 
@@ -190,24 +196,21 @@ class SkillIndex (APIView):
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        
-    def post (self, request):
+    def post (self, request, user_id):
         try:
             serializer = SkillSerializer(data=request.data)
-            skill_id = request.data.get('id') 
             
-            if Skill.objects.filter(id = skill_id).exists():
-                    return Response(
-                        {'error': "skill Already Exisits"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
         
             if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                skill= serializer.save()
+                user = get_object_or_404(UserProfile, user_id=user_id)
+                UserSkill.objects.create (user= user, skill= skill, role= request.data.get('role'))
+                user_serializer = UserProfileSerializer(user)
+                return Response({'data': serializer.data, 'skill user': user_serializer.data}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class AssociateSkill(APIView):
@@ -216,22 +219,30 @@ class AssociateSkill(APIView):
     def patch(self, request, user_id, skill_id):
         user = get_object_or_404(UserProfile, user_id=user_id)
         skill = get_object_or_404(Skill, id=skill_id)
-        user.skills.add(skill)
 
-        skills_user_does_have = Skill.objects.filter(userprofile=user.id)
+        # user.skills.add(skill)
+        user.skills.add (skill, through_defaults ={'user':user, 'skill': skill, 'role': request.data.get('role')})
+        user.save()
+        serializer = UserProfileSerializer(user)
+
+
+        skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
+        skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn')   
+
+        teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
+        learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
+
         skills_user_does_not_have = Skill.objects.exclude(
             id__in=user.skills.all().values_list("id")
         )
-
         return Response(
             {
-                "skills_user_does_have": SkillSerializer(skills_user_does_have, many=True).data,
-                "skills_user_does_not_have": SkillSerializer(
-                    skills_user_does_not_have, many=True
-                ).data,
-            },
-            status=status.HTTP_200_OK,
-        )
+                'skills_user_teach':SkillSerializer( teach_skill, many=True).data,
+                'skills_user_learn': SkillSerializer(learn_skill, many=True).data,
+                "skills_user_does_not_have": SkillSerializer(skills_user_does_not_have, many=True).data,
+             },
+                status=status.HTTP_200_OK,
+            ) 
 
 
 
@@ -243,23 +254,24 @@ class DissociateSkill(APIView):
         skill = get_object_or_404(Skill, id=skill_id)
         user.skills.remove(skill)
 
-        # queryset = UserProfile.objects.get(user= user_id)
+        
+        skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
+        skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn')   
+   
+        teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
+        learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
 
-        skills_user_does_have = Skill.objects.filter(userprofile=user.pk)
         skills_user_does_not_have = Skill.objects.exclude(
             id__in=user.skills.all().values_list("id")
         )
-
         return Response(
             {
-                "skills_user_does_have": SkillSerializer(skills_user_does_have, many=True).data,
-                "skills_user_does_not_have": SkillSerializer(
-                    skills_user_does_not_have, many=True
-                ).data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
+                'skills_user_teach':SkillSerializer( teach_skill, many=True).data,
+                'skills_user_learn': SkillSerializer(learn_skill, many=True).data,
+                "skills_user_does_not_have": SkillSerializer(skills_user_does_not_have, many=True).data,
+             },
+                status=status.HTTP_200_OK,
+            ) 
 
 
 class Skilldetail (APIView):

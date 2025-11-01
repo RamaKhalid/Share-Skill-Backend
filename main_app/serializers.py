@@ -15,6 +15,11 @@ class MeetingSerializer (serializers.ModelSerializer):
         model= Meeting
         fields = '__all__'
 
+class UserSkillSerializer (serializers.ModelSerializer):
+    class Meta:
+        model= UserSkill
+        fields = '__all__'
+
 class UserProfileSerializer (serializers.ModelSerializer):
     class Meta:
         model= UserProfile
