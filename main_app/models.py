@@ -3,6 +3,7 @@ from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
 from phonenumber_field.phonenumber import PhoneNumber
 from phonenumber_field.modelfields import PhoneNumberField
+from django.db.models import UniqueConstraint
 # Create your models here.
 
 User = get_user_model()
@@ -11,6 +12,14 @@ User = get_user_model()
 class Skill (models.Model):
     type= models.CharField (max_length=100)
     name= models.CharField (max_length=100)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['type', 'name'], 
+                name='unique_skill')
+            ]
+        
     def __str__(self):
         return self.name
 
@@ -28,10 +37,26 @@ class UserProfile(models.Model):
     level = models.CharField()
     phone = PhoneNumberField(null=False, blank=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    skills =  models.ManyToManyField(Skill, blank=True)
-    meetings =  models.ManyToManyField(Meeting, blank=True)
+    skills =  models.ManyToManyField(Skill, through='UserSkill', blank=True)
+    # meetings =  models.ForeignKey(Meeting, blank=True)
 
- 
+    def __str__(self):
+        return self.user.username
+
+class UserSkill (models.Model):
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    skill = models.ForeignKey(Skill,on_delete=models.CASCADE )
+    role = models.CharField()
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['user', 'skill', 'role'], 
+                name='unique_user_skill')
+            ]
+        
+    def __str__(self):
+        return f'{self.user} - {self.role} - {self.skill}'
 
     
 
