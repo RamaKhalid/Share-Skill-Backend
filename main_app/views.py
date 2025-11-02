@@ -289,21 +289,25 @@ class Match (APIView):
                 role ='Teach')
             
             users_learn_by_you = UserSkill.objects.filter(user_id__in=users_can_teach_you.values_list('user_id'),role = 'Learn')
+            # users_teach_what_you_want_to_learn = UserSkill.objects.filter(user_id__in=users_learn_by_you.values_list('user_id'),role = 'Teach')
             
             users_can_teach_and_learn_by_you =users_learn_by_you.filter(
                 skill__in =[s.skill for s in skills_user_teach])
             
             user_profile_skill= UserProfile.objects.filter (id__in=users_can_teach_and_learn_by_you.values_list('user_id'))
             user_skill= User.objects.filter (id__in=user_profile_skill.values_list('user_id'))
-            skill_data= Skill.objects.filter (id__in=users_can_teach_and_learn_by_you.values_list('skill_id'))
+            Learn_skill_data= Skill.objects.filter (id__in=users_can_teach_and_learn_by_you.values_list('skill_id'))
+            teach_skill_data= Skill.objects.filter (id__in=users_can_teach_you.values_list('skill'))
             
-            # return Response(SkillSerializer(skill_data, many=True).data)
+            # return Response(SkillSerializer(teach_skill_data, many=True).data)
+            # return Response(UserSkillSerializer(users_can_teach_you, many=True).data)
             
-            return Response({'skill_data':SkillSerializer(skill_data, many=True).data,
+            return Response({'teach_skill_data': SkillSerializer(teach_skill_data, many=True).data,
+                'Learn_skill_data':SkillSerializer(Learn_skill_data, many=True).data,
                 'user_match': UserSerializer(user_skill, many=True).data,
                 'profile_user':UserProfileSerializer(user_profile_skill, many=True).data,
                 'users_can_teach_and_learn_by_you': UserSkillSerializer(users_can_teach_and_learn_by_you, many=True).data,
-                'users_can_teach_you': UserSkillSerializer(users_learn_by_you, many=True).data}, status=status.HTTP_200_OK,)
+                'users_can_teach_you': UserSkillSerializer(users_can_teach_you, many=True).data}, status=status.HTTP_200_OK,)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
