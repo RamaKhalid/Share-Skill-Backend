@@ -1,14 +1,15 @@
 from django.db import models
 from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
-from phonenumber_field.phonenumber import PhoneNumber
+# from phonenumber_field.phonenumber import PhoneNumber
 from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import UniqueConstraint
+from django.core.exceptions import ValidationError
 # Create your models here.
 
 User = get_user_model()
 
-# Add more fields to your user
+
 class Skill (models.Model):
     type= models.CharField (max_length=100)
     name= models.CharField (max_length=100)
@@ -22,15 +23,21 @@ class Skill (models.Model):
         
     def __str__(self):
         return self.name
+    
+def restrict_amount(value):
+    pass
 
 class Meeting (models.Model):
     date= models.DateField ('Meeting data')
-    time= models.TimeField ('Meeting data')
-    is_complete= models.BooleanField ()
-    rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)], blank=True, null=True)
+    starting_time= models.TimeField ()
+    end_time= models.TimeField ()
+    is_complete= models.BooleanField (default= False)
+    # users = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    # rate= models.PositiveIntegerField (validators= [MaxValueValidator(5)], blank=True, null=True)
 
     def __str__(self):
-        return f'Metting on:{self.date } - {self.time}'
+        return f'Metting on:{self.date } - {self.starting_time}'
 
 class UserProfile(models.Model):
     birth_date = models.DateField()
@@ -38,7 +45,9 @@ class UserProfile(models.Model):
     phone = PhoneNumberField(null=False, blank=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     skills =  models.ManyToManyField(Skill, through='UserSkill', blank=True)
+    meetings =  models.ManyToManyField(Meeting, blank=True)
     # meetings =  models.ForeignKey(Meeting, blank=True)
+    # meetings = models.ForeignKey(Meeting, on_delete=models.CASCADE, validators=(restrict_amount, ))
 
     def __str__(self):
         return self.user.username

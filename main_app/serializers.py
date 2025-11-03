@@ -10,20 +10,22 @@ class SkillSerializer (serializers.ModelSerializer):
         model= Skill
         fields = '__all__'
 
-class MeetingSerializer (serializers.ModelSerializer):
-    class Meta:
-        model= Meeting
-        fields = '__all__'
 
 class UserSkillSerializer (serializers.ModelSerializer):
     class Meta:
         model= UserSkill
         fields = '__all__'
 
+class MeetingSerializer (serializers.ModelSerializer):
+    class Meta:
+        model= Meeting
+        fields = '__all__'
+        
 class UserProfileSerializer (serializers.ModelSerializer):
     class Meta:
         model= UserProfile
         fields = '__all__'
+
 
 class CertificateSerializer (serializers.ModelSerializer):
     class Meta:

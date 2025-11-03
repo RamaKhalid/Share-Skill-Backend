@@ -188,7 +188,7 @@ class UserUpdate(APIView):
 
 class SkillIndex (APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def get(self, request, user_id):
         try:
             skill = Skill.objects.all()
             serializer = SkillSerializer(skill, many=True)
@@ -284,9 +284,7 @@ class Match (APIView):
             skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
             skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn') 
               
-            users_can_teach_you =  UserSkill.objects.filter(
-                skill__in =[s.skill for s in skills_user_learn], 
-                role ='Teach')
+            users_can_teach_you = UserSkill.objects.filter(skill__in =[s.skill for s in skills_user_learn], role ='Teach')
             
             users_learn_by_you = UserSkill.objects.filter(user_id__in=users_can_teach_you.values_list('user_id'),role = 'Learn')
             # users_teach_what_you_want_to_learn = UserSkill.objects.filter(user_id__in=users_learn_by_you.values_list('user_id'),role = 'Teach')
@@ -468,57 +466,50 @@ class ExperienceDetail(APIView):
 
 
 class MeetingIndex(APIView):
-    permission_classes = [IsAuthenticated]
-    def get(self, request):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def get(self, request, user_id):
         try:
-            meeting = Meeting.objects.all()
-            serializer = MeetingSerializer(meeting, many=True)
-            return Response(serializer.data)
+            user_profile = get_object_or_404(UserProfile, user_id=user_id)
+            # meeting = get_object_or_404(Meeting, userprofile=user.id)
+            
+            meeting = Meeting.objects.filter(userprofile=user_profile.id)
+            user = get_object_or_404(User, id= user_id)
+            meeting_serializer = MeetingSerializer(meeting, many=True).data
+            user_serializer = UserSerializer(user).data
+            # return Response(MeetingSerializer(meeting, many=True).data)
+            return Response({'meeting':meeting_serializer, 
+                             'user_data':user_serializer})
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def post(self, request):
+    def post(self, request,user_id):
         try:
             serializer = MeetingSerializer(data=request.data)
-            Meeting_id = request.data.get('id') 
-
-            
-            
-            if Meeting.objects.filter(id = Meeting_id).exists():
-                    return Response(
-                        {'error': "Meeting Already Exisits"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-        
             if serializer.is_valid():
-                serializer.save()
-                user = get_object_or_404(UserProfile, user_id=request.user.user_id)
-                meeting = get_object_or_404(Meeting, id=Meeting_id)
+                meeting_serializer= serializer.save().id
+                user = get_object_or_404(UserProfile, user_id=user_id)
+                meeting = get_object_or_404(Meeting, id=meeting_serializer)
                 user.meetings.add(meeting)
-
-                meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
-                meetings_user_does_not_have = Meeting.objects.exclude(
-                    id__in=user.meetings.all().values_list("id")
-                )
-
                 return Response(
-                    {
-                        "meetings_user_does_have": MeetingSerializer(meetings_user_does_have, many=True).data,
-                        "meetings_user_does_not_have": MeetingSerializer(
-                            meetings_user_does_not_have, many=True
-                        ).data,
-                    },
+                    serializer.data,
                     status=status.HTTP_200_OK,
                 )
-
-                # return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+
+    
+
+        
+
 class MeetingDetail(APIView):
     permission_classes = [AllowAny]
+    
     def put(self, request, meeting_id):
         try:
             meeting = get_object_or_404(Meeting, id = meeting_id)
