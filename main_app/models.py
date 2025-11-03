@@ -40,9 +40,9 @@ class Meeting (models.Model):
         return f'Metting on:{self.date } - {self.starting_time}'
 
 class UserProfile(models.Model):
-    birth_date = models.DateField()
-    level = models.CharField()
-    phone = PhoneNumberField(null=False, blank=False, unique=True)
+    birth_date = models.DateField(null=True,blank=True)
+    level = models.CharField(null=True,blank=True)
+    phone = models.CharField(null=True, blank=True, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     skills =  models.ManyToManyField(Skill, through='UserSkill', blank=True)
     meetings =  models.ManyToManyField(Meeting, blank=True)

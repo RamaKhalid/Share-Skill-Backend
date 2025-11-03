@@ -18,7 +18,7 @@ from .serializers import *
 User = get_user_model()
 
 class Home (APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
             user = User.objects.all()
@@ -67,9 +67,15 @@ class SignupUserView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             
-            if User.objects.filter(username=username).exists():
+            if User.objects.filter(username=username ).exists():
                 return Response(
-                    {'error': "User Already Exisits"},
+                    {'error': "UserName Already Exisits"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if User.objects.filter(email=email ).exists():
+                return Response(
+                    {'error': "Email Already Exisits"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -80,29 +86,34 @@ class SignupUserView(APIView):
                 first_name = first_name,
                 last_name = last_name
             )
+            user_profile = UserProfile.objects.create(
+               
+                user = user
+            )
 
-            profile_data= {
-                'birth_date' : request.data.get("birth_date"),
-                'level' : request.data.get("level"),
-                'phone' : request.data.get("phone"),
-                'user': user.id
-                }
-
-            serializer = UserProfileSerializer(data = profile_data)
-            if serializer.is_valid():
-                serializer.save()
-                queryset = UserProfile.objects.get(user=user.id)
-                serializer = UserProfileSerializer(queryset)
-                # return Response(serializer.data, status=status.HTTP_200_OK)
-                return Response(serializer.data,status=status.HTTP_201_CREATED,)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"id": user.id, "username": user.username, "email": user.email},
+            status=status.HTTP_201_CREATED,
+        )            
 
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # profile_data= {
+            #     'birth_date' : request.data.get("birth_date"),
+            #     'level' : request.data.get("level"),
+            #     'phone' : request.data.get("phone"),
+            #     'user': user.id
+            #     }
+
+            # serializer = UserProfileSerializer(data = profile_data)
+            # if serializer.is_valid():
+            #     serializer.save()
+            #     queryset = UserProfile.objects.get(user=user.id)
+            #     serializer = UserProfileSerializer(queryset)
+                # return Response(serializer.data, status=status.HTTP_200_OK)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class DeleteUser(APIView):
     permission_classes = [IsAuthenticated]
-    
     def delete(self, request):
         user = User.objects.get(id = request.user)
         user.delete()
@@ -111,7 +122,7 @@ class DeleteUser(APIView):
 
 
 class UserProfileIndex(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             user = User.objects.get(id= user_id)
@@ -142,7 +153,7 @@ class UserProfileIndex(APIView):
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    # use it after sign up immediately
+    # # use it after sign up immediately
     # def post(self, request, user_id):
     #     try:
     #         serializer = UserProfileSerializer(data = request.data)
@@ -151,8 +162,8 @@ class UserProfileIndex(APIView):
     #             queryset = UserProfile.objects.filter(user=user_id)
     #             serializer = UserProfileSerializer(queryset, many=True)
     #             return Response(serializer.data, status=status.HTTP_200_OK)
-        # except Exception as error:
-        #     return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #     except Exception as error:
+    #         return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def put(self, request, user_id):
         try:
@@ -169,7 +180,7 @@ class UserProfileIndex(APIView):
             )
         
 class UserUpdate(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def put(self, request, user_id):
         try:
             queryset = get_object_or_404(User, id = user_id)
@@ -187,7 +198,7 @@ class UserUpdate(APIView):
 
 
 class SkillIndex (APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             skill = Skill.objects.all()
@@ -214,8 +225,7 @@ class SkillIndex (APIView):
 
 
 class AssociateSkill(APIView):
-    permission_classes = [AllowAny]
-
+    permission_classes = [IsAuthenticated]
     def patch(self, request, user_id, skill_id):
         user = get_object_or_404(UserProfile, user_id=user_id)
         skill = get_object_or_404(Skill, id=skill_id)
@@ -247,8 +257,7 @@ class AssociateSkill(APIView):
 
 
 class DissociateSkill(APIView):
-    permission_classes = [AllowAny]
-
+    permission_classes = [IsAuthenticated]
     def patch(self, request, user_id, skill_id):
         user = get_object_or_404(UserProfile, user_id=user_id)
         skill = get_object_or_404(Skill, id=skill_id)
@@ -276,7 +285,7 @@ class DissociateSkill(APIView):
 
 
 class Match (APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             user = get_object_or_404(UserProfile, user_id=user_id)
@@ -342,8 +351,7 @@ class Skilldetail (APIView):
 
 
 class CertificateIndex(APIView):
-    permission_classes = [AllowAny]
-
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             queryset = Certificate.objects.filter(owner=user_id)
@@ -374,7 +382,7 @@ class CertificateIndex(APIView):
   
 
 class CertificateDetail(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def put (self, request, cert_id):
         try:
             queryset = get_object_or_404(Certificate, id = cert_id)
@@ -403,7 +411,7 @@ class CertificateDetail(APIView):
 
 
 class ExperienceIndex(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get (self, request, user_id):
         try:
@@ -437,7 +445,7 @@ class ExperienceIndex(APIView):
 
 
 class ExperienceDetail(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def put (self, request, Experience_id):
         try:
             queryset = get_object_or_404(Experience, id = Experience_id)
@@ -466,9 +474,7 @@ class ExperienceDetail(APIView):
 
 
 class MeetingIndex(APIView):
-    # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
-
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             user_profile = get_object_or_404(UserProfile, user_id=user_id)
@@ -508,8 +514,7 @@ class MeetingIndex(APIView):
         
 
 class MeetingDetail(APIView):
-    permission_classes = [AllowAny]
-    
+    permission_classes = [IsAuthenticated]
     def put(self, request, meeting_id):
         try:
             meeting = get_object_or_404(Meeting, id = meeting_id)
@@ -531,7 +536,7 @@ class MeetingDetail(APIView):
 
 
 class AssociateMetting(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, user_id, meeting_id):
         user = get_object_or_404(UserProfile, user_id=user_id)
@@ -555,7 +560,7 @@ class AssociateMetting(APIView):
     
 
 class DissociateMeeting(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, user_id, meeting_id):
         user = get_object_or_404(UserProfile, user_id=user_id)
