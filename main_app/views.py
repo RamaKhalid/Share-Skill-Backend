@@ -387,8 +387,11 @@ class CertificateDetail(APIView):
         try:
             queryset = get_object_or_404(Certificate, id = cert_id)
             serializer = CertificateSerializer(queryset, data=request.data)
+            certificate_id = request.data.get('owner')
             if serializer.is_valid():
                 serializer.save()
+                queryset = Certificate.objects.filter(owner=certificate_id)
+                serializer = CertificateSerializer(queryset, many=True)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
@@ -443,15 +446,17 @@ class ExperienceIndex(APIView):
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class ExperienceDetail(APIView):
     permission_classes = [IsAuthenticated]
     def put (self, request, Experience_id):
         try:
             queryset = get_object_or_404(Experience, id = Experience_id)
             serializer = ExperienceSerializer(queryset, data=request.data)
+            experience_id = request.data.get('owner')
             if serializer.is_valid():
                 serializer.save()
+                queryset = Experience.objects.filter(owner=experience_id)
+                serializer = ExperienceSerializer(queryset, many=True)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
@@ -474,35 +479,150 @@ class ExperienceDetail(APIView):
 
 
 class MeetingIndex(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     def get(self, request, user_id):
         try:
+            username=[]
             user_profile = get_object_or_404(UserProfile, user_id=user_id)
-            # meeting = get_object_or_404(Meeting, userprofile=user.id)
+            #take all the meeting that the user have 
+            meeting = user_profile.meetings.all() 
             
-            meeting = Meeting.objects.filter(userprofile=user_profile.id)
-            user = get_object_or_404(User, id= user_id)
+            #Look for other users that have the same meeting id 
+            participant_meeting= Meeting.objects.filter(id__in= meeting.values_list('id', flat=True))
+
+            #Take the Userprofile data For the other useres that share the same meeting as you (to take the User ID)
+            users_with_this_meeting_list=UserProfile.objects.filter(meetings__in= participant_meeting.values_list('id', flat=True))
+
+            # Take the Users from the Userprofile to save the username later
+            user_ids = User.objects.filter( id__in= users_with_this_meeting_list.values_list('user', flat=True))
+
+            #only take the other user (participant) ond leave the your data
+            participant = user_ids.exclude(id =user_id )
+            participant_serializer=UserSerializer(participant,many=True).data
+
+            
             meeting_serializer = MeetingSerializer(meeting, many=True).data
-            user_serializer = UserSerializer(user).data
-            # return Response(MeetingSerializer(meeting, many=True).data)
-            return Response({'meeting':meeting_serializer, 
-                             'user_data':user_serializer})
+            #Take the username from the participent to join it later with the meeting
+            for data in participant_serializer:
+                username.append(data['username'])
+                
+            #Give the meeting thier participent
+            data=meeting_serializer
+            meeting_count = len(data)
+            username_count = len(username)
+            limit = min(meeting_count, username_count)
+
+            for i in range(limit):
+                meeting = data[i]
+                name = username[i]
+                meeting['participant'] = name
+
+            return Response({ 'meeting':data, })
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def post(self, request,user_id):
+    # def post(self, request,user_id):
+    #     try:
+    #         serializer = MeetingSerializer(data=request.data)
+    #         if serializer.is_valid():
+    #             meeting_serializer= serializer.save().id
+    #             user = get_object_or_404(UserProfile, user_id=user_id)
+    #             meeting = get_object_or_404(Meeting, id=meeting_serializer)
+    #             user.meetings.add(meeting)
+    #             meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
+    #             meetings_serializer= MeetingSerializer(meetings_user_does_have, many=True).data
+    #             return Response(
+    #                 meetings_serializer,
+    #                 status=status.HTTP_200_OK,
+    #             )
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     except Exception as error:
+    #         return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    
+    def post(self, request, user_id):
         try:
+            username=[]
             serializer = MeetingSerializer(data=request.data)
             if serializer.is_valid():
-                meeting_serializer= serializer.save().id
-                user = get_object_or_404(UserProfile, user_id=user_id)
-                meeting = get_object_or_404(Meeting, id=meeting_serializer)
-                user.meetings.add(meeting)
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_200_OK,
-                )
+                meeting = serializer.save()  
                 
+                # Add creator
+                creator = get_object_or_404(UserProfile, user_id=user_id)
+                creator.meetings.add(meeting)
+            
+                # Add participants
+                # user = User.objects.all()
+                participant_username = request.data.get('participant_username')
+                users = User.objects.get(username__iexact  = participant_username)
+            
+                if users.id != user_id:
+                    participant = get_object_or_404(UserProfile, user_id=users.id)
+                    participant.meetings.add(meeting)
+                
+                meetings_user_does_have = creator.meetings.all()
+                meetings_serializer= MeetingSerializer(meetings_user_does_have, many=True).data
+                
+                the_new_participant_meeting= participant.meetings.filter(id__in= meetings_user_does_have.values_list('id', flat=True))
+                participant_data =UserSerializer(users).data
+
+                participant_meeting= Meeting.objects.filter(id__in= meetings_user_does_have.values_list('id', flat=True))
+
+                #Take the Userprofile data For the other useres that share the same meeting as you (to take the User ID)
+                users_with_this_meeting_list=UserProfile.objects.filter(meetings__in= participant_meeting.values_list('id', flat=True))
+
+                # Take the Users from the Userprofile to save the username later
+                user_ids = User.objects.filter( id__in= users_with_this_meeting_list.values_list('user', flat=True))
+
+                #only take the other user (participant) ond leave the your data
+                participant = user_ids.exclude(id =user_id )
+                participant_serializer=UserSerializer(participant,many=True).data
+
+                
+                meeting_serializer = MeetingSerializer(meetings_user_does_have, many=True).data
+                #Take the username from the participent to join it later with the meeting
+                for data in participant_serializer:
+                    username.append(data['username'])
+                    
+                #Give the meeting thier participent
+                data=meeting_serializer
+                meeting_count = len(data)
+                username_count = len(username)
+                limit = min(meeting_count, username_count)
+
+                for i in range(limit):
+                    meeting = data[i]
+                    name = username[i]
+                    meeting['participant'] = name
+
+                return Response({ 'meeting':data, })
+
+                # users_with_this_meeting_list=UserProfile.objects.filter(meetings__in= the_new_participant_meeting.values_list('id', flat=True))
+                # user_ids = User.objects.filter( id__in= users_with_this_meeting_list.values_list('user', flat=True))
+                # # y=UserProfileSerializer(users_with_this_meeting,many=True).data
+                # participant = user_ids.exclude(id =user_id )
+                # users_with_this_meeting=UserSerializer(participant,many=True).data
+
+                # for data in users_with_this_meeting:
+                #     username.append(data['username'])
+                #     print(username)
+
+                # data=the_new_participant_meeting
+                # for i in range(len(data)):
+                #     if i < len(username):
+                #         data[i]['participant'] = username[i]
+
+
+                # # for met in data:
+                
+                # #     met['participant']=username
+
+
+                # return Response(
+                #     {'meeting':meetings_serializer,
+                #      'participant':participant_data},
+                #     status=status.HTTP_200_OK,
+                # )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -543,7 +663,7 @@ class AssociateMetting(APIView):
         meeting = get_object_or_404(Meeting, id=meeting_id)
         user.meetings.add(meeting)
 
-        meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
+        meetings_user_does_have = user.meetings.all()
         meetings_user_does_not_have = Meeting.objects.exclude(
             id__in=user.meetings.all().values_list("id")
         )
