@@ -86,10 +86,6 @@ class SignupUserView(APIView):
                 first_name = first_name,
                 last_name = last_name
             )
-            user_profile = UserProfile.objects.create(
-               
-                user = user
-            )
 
             return Response({"id": user.id, "username": user.username, "email": user.email},
             status=status.HTTP_201_CREATED,
@@ -97,21 +93,8 @@ class SignupUserView(APIView):
 
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            # profile_data= {
-            #     'birth_date' : request.data.get("birth_date"),
-            #     'level' : request.data.get("level"),
-            #     'phone' : request.data.get("phone"),
-            #     'user': user.id
-            #     }
-
-            # serializer = UserProfileSerializer(data = profile_data)
-            # if serializer.is_valid():
-            #     serializer.save()
-            #     queryset = UserProfile.objects.get(user=user.id)
-            #     serializer = UserProfileSerializer(queryset)
-                # return Response(serializer.data, status=status.HTTP_200_OK)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+           
+  #TODO      
 class DeleteUser(APIView):
     permission_classes = [IsAuthenticated]
     def delete(self, request):
@@ -136,9 +119,6 @@ class UserProfileIndex(APIView):
             teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
             learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
 
-
-            # skills_user_does_have = UserSkill.objects.filter(user_id= Profile.id)
-
             skills_user_does_not_have = Skill.objects.exclude(
                 id__in=Profile.skills.all().values_list("id")
             )
@@ -152,18 +132,6 @@ class UserProfileIndex(APIView):
 
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    # # use it after sign up immediately
-    # def post(self, request, user_id):
-    #     try:
-    #         serializer = UserProfileSerializer(data = request.data)
-    #         if serializer.is_valid():
-    #             serializer.save()
-    #             queryset = UserProfile.objects.filter(user=user_id)
-    #             serializer = UserProfileSerializer(queryset, many=True)
-    #             return Response(serializer.data, status=status.HTTP_200_OK)
-    #     except Exception as error:
-    #         return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def put(self, request, user_id):
         try:
@@ -227,60 +195,65 @@ class SkillIndex (APIView):
 class AssociateSkill(APIView):
     permission_classes = [IsAuthenticated]
     def patch(self, request, user_id, skill_id):
-        user = get_object_or_404(UserProfile, user_id=user_id)
-        skill = get_object_or_404(Skill, id=skill_id)
+        try:
+            user = get_object_or_404(UserProfile, user_id=user_id)
+            skill = get_object_or_404(Skill, id=skill_id)
 
-        # user.skills.add(skill)
-        user.skills.add (skill, through_defaults ={'user':user, 'skill': skill, 'role': request.data.get('role')})
-        user.save()
-        serializer = UserProfileSerializer(user)
+            # user.skills.add(skill)
+            user.skills.add (skill, through_defaults ={'user':user, 'skill': skill, 'role': request.data.get('role')})
+            user.save()
+            serializer = UserProfileSerializer(user)
 
 
-        skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
-        skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn')   
+            skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
+            skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn')   
 
-        teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
-        learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
+            teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
+            learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
 
-        skills_user_does_not_have = Skill.objects.exclude(
-            id__in=user.skills.all().values_list("id")
-        )
-        return Response(
-            {
-                'skills_user_teach':SkillSerializer( teach_skill, many=True).data,
-                'skills_user_learn': SkillSerializer(learn_skill, many=True).data,
-                "skills_user_does_not_have": SkillSerializer(skills_user_does_not_have, many=True).data,
-             },
-                status=status.HTTP_200_OK,
-            ) 
-
+            skills_user_does_not_have = Skill.objects.exclude(
+                id__in=user.skills.all().values_list("id")
+            )
+            return Response(
+                {
+                    'skills_user_teach':SkillSerializer( teach_skill, many=True).data,
+                    'skills_user_learn': SkillSerializer(learn_skill, many=True).data,
+                    "skills_user_does_not_have": SkillSerializer(skills_user_does_not_have, many=True).data,
+                },
+                    status=status.HTTP_200_OK,
+                ) 
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DissociateSkill(APIView):
     permission_classes = [IsAuthenticated]
     def patch(self, request, user_id, skill_id):
-        user = get_object_or_404(UserProfile, user_id=user_id)
-        skill = get_object_or_404(Skill, id=skill_id)
-        user.skills.remove(skill)
+        try:
+            user = get_object_or_404(UserProfile, user_id=user_id)
+            skill = get_object_or_404(Skill, id=skill_id)
+            user.skills.remove(skill)
 
-        
-        skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
-        skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn')   
-   
-        teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
-        learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
+            
+            skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
+            skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn')   
+    
+            teach_skill= Skill.objects.filter (id__in=skills_user_teach.values_list('skill_id'))
+            learn_skill= Skill.objects.filter (id__in=skills_user_learn.values_list('skill_id'))
 
-        skills_user_does_not_have = Skill.objects.exclude(
-            id__in=user.skills.all().values_list("id")
-        )
-        return Response(
-            {
-                'skills_user_teach':SkillSerializer( teach_skill, many=True).data,
-                'skills_user_learn': SkillSerializer(learn_skill, many=True).data,
-                "skills_user_does_not_have": SkillSerializer(skills_user_does_not_have, many=True).data,
-             },
-                status=status.HTTP_200_OK,
-            ) 
+            skills_user_does_not_have = Skill.objects.exclude(
+                id__in=user.skills.all().values_list("id")
+            )
+            return Response(
+                {
+                    'skills_user_teach':SkillSerializer( teach_skill, many=True).data,
+                    'skills_user_learn': SkillSerializer(learn_skill, many=True).data,
+                    "skills_user_does_not_have": SkillSerializer(skills_user_does_not_have, many=True).data,
+                },
+                    status=status.HTTP_200_OK,
+                ) 
+        except Exception as error:
+                return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -350,16 +323,6 @@ class MatchOneSkill(APIView):
 
 class Skilldetail (APIView):
     permission_classes = [IsAuthenticated]
-    def put (self, request, skill_id):
-        try:
-            queryset = get_object_or_404(Skill, id = skill_id)
-            serializer = SkillSerializer(queryset, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as error:
-            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def delete(self, request, skill_id):
         try:
@@ -547,25 +510,7 @@ class MeetingIndex(APIView):
             return Response({ 'meeting':data, })
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    # def post(self, request,user_id):
-    #     try:
-    #         serializer = MeetingSerializer(data=request.data)
-    #         if serializer.is_valid():
-    #             meeting_serializer= serializer.save().id
-    #             user = get_object_or_404(UserProfile, user_id=user_id)
-    #             meeting = get_object_or_404(Meeting, id=meeting_serializer)
-    #             user.meetings.add(meeting)
-    #             meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
-    #             meetings_serializer= MeetingSerializer(meetings_user_does_have, many=True).data
-    #             return Response(
-    #                 meetings_serializer,
-    #                 status=status.HTTP_200_OK,
-    #             )
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #     except Exception as error:
-    #         return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+       
     
     def post(self, request, user_id):
         try:
@@ -573,13 +518,10 @@ class MeetingIndex(APIView):
             serializer = MeetingSerializer(data=request.data)
             if serializer.is_valid():
                 meeting = serializer.save()  
-                
-                # Add creator
+               
                 creator = get_object_or_404(UserProfile, user_id=user_id)
                 creator.meetings.add(meeting)
             
-                # Add participants
-                # user = User.objects.all()
                 participant_username = request.data.get('participant_username')
                 users = User.objects.get(username__iexact  = participant_username)
             
@@ -588,10 +530,6 @@ class MeetingIndex(APIView):
                     participant.meetings.add(meeting)
                 
                 meetings_user_does_have = creator.meetings.all()
-                meetings_serializer= MeetingSerializer(meetings_user_does_have, many=True).data
-                
-                the_new_participant_meeting= participant.meetings.filter(id__in= meetings_user_does_have.values_list('id', flat=True))
-                participant_data =UserSerializer(users).data
 
                 participant_meeting= Meeting.objects.filter(id__in= meetings_user_does_have.values_list('id', flat=True))
 
@@ -623,33 +561,6 @@ class MeetingIndex(APIView):
                     meeting['participant'] = name
 
                 return Response({ 'meeting':data, })
-
-                # users_with_this_meeting_list=UserProfile.objects.filter(meetings__in= the_new_participant_meeting.values_list('id', flat=True))
-                # user_ids = User.objects.filter( id__in= users_with_this_meeting_list.values_list('user', flat=True))
-                # # y=UserProfileSerializer(users_with_this_meeting,many=True).data
-                # participant = user_ids.exclude(id =user_id )
-                # users_with_this_meeting=UserSerializer(participant,many=True).data
-
-                # for data in users_with_this_meeting:
-                #     username.append(data['username'])
-                #     print(username)
-
-                # data=the_new_participant_meeting
-                # for i in range(len(data)):
-                #     if i < len(username):
-                #         data[i]['participant'] = username[i]
-
-
-                # # for met in data:
-                
-                # #     met['participant']=username
-
-
-                # return Response(
-                #     {'meeting':meetings_serializer,
-                #      'participant':participant_data},
-                #     status=status.HTTP_200_OK,
-                # )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -680,56 +591,6 @@ class MeetingDetail(APIView):
             return Response({'message': f"Skill {meeting_id} has been deleted"}, status=status.HTTP_200_OK)
         except Exception as error:
             return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class AssociateMetting(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def patch(self, request, user_id, meeting_id):
-        user = get_object_or_404(UserProfile, user_id=user_id)
-        meeting = get_object_or_404(Meeting, id=meeting_id)
-        user.meetings.add(meeting)
-
-        meetings_user_does_have = user.meetings.all()
-        meetings_user_does_not_have = Meeting.objects.exclude(
-            id__in=user.meetings.all().values_list("id")
-        )
-
-        return Response(
-            {
-                "meetings_user_does_have": MeetingSerializer(meetings_user_does_have, many=True).data,
-                "meetings_user_does_not_have": MeetingSerializer(
-                    meetings_user_does_not_have, many=True
-                ).data,
-            },
-            status=status.HTTP_200_OK,
-        )
-    
-
-class DissociateMeeting(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def patch(self, request, user_id, meeting_id):
-        user = get_object_or_404(UserProfile, user_id=user_id)
-        meeting = get_object_or_404(Meeting, id=meeting_id)
-        user.meetings.remove(meeting)
-
-        meetings_user_does_have = Meeting.objects.filter(userprofile=user.id)
-        meetings_user_does_not_have = Meeting.objects.exclude(
-            id__in=user.meetings.all().values_list("id")
-        )
-
-        return Response(
-            {
-                "meetings_user_does_have": MeetingSerializer(meetings_user_does_have, many=True).data,
-                "meetings_user_does_not_have": MeetingSerializer(
-                    meetings_user_does_not_have, many=True
-                ).data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
 
 
 

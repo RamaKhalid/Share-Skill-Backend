@@ -1,17 +1,32 @@
 services:
-  catcollectorspa:
+  skillshare:
     image: postgres
-    container_name: SkillShare
+    container_name: skillshare
     volumes:
       - postgres_data:/var/lib/postgresql
     environment:
       POSTGRES_USER: user_admin
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: catcollectorspa
+      POSTGRES_DB: skillshare
+  
+  frontend:
+    build:
+      context: ../skill-share-frontend/
+      dockerfile: Dockerfile
+    container_name: "skill-share_frontend"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../skill-skare-frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - catcollectorspa
 
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: backend_api
     command: >
@@ -20,13 +35,12 @@ services:
               python manage.py migrate &&
               python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./backend/:/usr/src/backend/
+      - ./:/usr/src/backend/
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - ./.env
     depends_on:
-      - catcollectorspa
+      - ShareSkill
 volumes:
   postgres_data:
-  
