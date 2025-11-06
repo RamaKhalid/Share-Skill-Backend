@@ -285,7 +285,7 @@ class DissociateSkill(APIView):
 
 
 class Match (APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             user = get_object_or_404(UserProfile, user_id=user_id)
@@ -321,7 +321,7 @@ class Match (APIView):
 
 
 class MatchOneSkill(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request,user_id, skill_id):
         try:
             user = get_object_or_404(UserProfile, user_id=user_id)
@@ -356,7 +356,7 @@ class MatchOneSkill(APIView):
 
 
 class Skilldetail (APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def put (self, request, skill_id):
         try:
             queryset = get_object_or_404(Skill, id = skill_id)
@@ -513,7 +513,7 @@ class ExperienceDetail(APIView):
 
 
 class MeetingIndex(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         try:
             username=[]
