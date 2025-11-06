@@ -20,13 +20,6 @@ class MeetingSerializer (serializers.ModelSerializer):
     class Meta:
         model= Meeting
         fields = '__all__'
-        
-class UserProfileSerializer (serializers.ModelSerializer):
-    class Meta:
-        model= UserProfile
-        fields = '__all__'
-
-
 class CertificateSerializer (serializers.ModelSerializer):
     class Meta:
         model= Certificate
@@ -36,8 +29,17 @@ class ExperienceSerializer (serializers.ModelSerializer):
     class Meta:
         model= Experience
         fields = '__all__'
+        
+class UserProfileSerializer (serializers.ModelSerializer):
+    class Meta:
+        model= UserProfile
+        fields = '__all__'
+
+
 
 class UserSerializer (serializers.ModelSerializer):
+    certificates= CertificateSerializer(many= True, read_only=True)
+    experiences = ExperienceSerializer(many=True, read_only=True)
     class Meta:
         model= User
-        fields = ['id' ,'username', 'first_name', 'last_name', 'email']
+        fields = ['id' ,'username', 'first_name', 'last_name', 'email', 'certificates', 'experiences']

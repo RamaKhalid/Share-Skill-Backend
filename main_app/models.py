@@ -74,7 +74,7 @@ class Experience (models.Model):
     title = models.CharField (max_length=100)
     description= models.CharField (max_length=100)
     place= models.CharField (max_length=100)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
     def __str__(self):
         return self.title
 
@@ -83,6 +83,6 @@ class Experience (models.Model):
 class Certificate (models.Model):
     type= models.CharField (max_length=100)
     name= models.CharField (max_length=100)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name= 'certificates')
     def __str__(self):
         return self.name
