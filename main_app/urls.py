@@ -12,7 +12,6 @@ urlpatterns= [
     path('profile/<int:user_id>/', UserProfileIndex.as_view(), name='profile'),
     path('user/<int:user_id>/', UserUpdate.as_view(), name='User_update'),
     path('skills/<int:user_id>', SkillIndex.as_view(), name='skill'),
-    # path('skills/<int:skill_id>/', Skilldetail.as_view(), name='Skill_detail'),
     path('profile/<int:user_id>/associate-skill/<int:skill_id>/',AssociateSkill.as_view(), name= 'assoc_skill'),
     path('profile/<int:user_id>/dissociate-skill/<int:skill_id>/',DissociateSkill.as_view(), name= 'deassoc_skill'),
     path('profile/<int:user_id>/certificate/', CertificateIndex.as_view(), name='certificate_Index'),
@@ -21,8 +20,9 @@ urlpatterns= [
     path('profile/experience/<int:Experience_id>/', ExperienceDetail.as_view(), name='experience_detail'),
     path('meetings/<int:user_id>/', MeetingIndex.as_view(), name='all_meeting'),
     path('meeting/<int:meeting_id>/', MeetingDetail.as_view(), name='meeting'),
-    path('profile/<int:user_id>/associate-meeting/<int:meeting_id>/',AssociateMetting.as_view(), name= 'assoc_meeting'),
-    path('profile/<int:user_id>/dissociate-meeting/<int:meeting_id>/',DissociateMeeting.as_view(), name= 'deassoc_meeting'),
     path('match/<int:user_id>', Match.as_view(), name= 'Match'),
     path('match/<int:user_id>/skill/<int:skill_id>/', MatchOneSkill.as_view(), name= 'Match_one_skill')
 ]
+
+
+

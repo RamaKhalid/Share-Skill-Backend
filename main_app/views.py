@@ -292,12 +292,8 @@ class Match (APIView):
 
             skills_user_teach = UserSkill.objects.filter(user_id=user.id , role = 'Teach')
             skills_user_learn = UserSkill.objects.filter(user_id=user.id , role = 'Learn') 
-              #teach what you want to learn
             users_can_teach_you = UserSkill.objects.filter(skill__in =[s.skill for s in skills_user_learn], role ='Teach')
-            
-            #Looking in the ids of users the can teach you and grap the what what they what to learn
             users_learn_by_you = UserSkill.objects.filter(user_id__in=users_can_teach_you.values_list('user_id'),role = 'Learn')
-            # users_teach_what_you_want_to_learn = UserSkill.objects.filter(user_id__in=users_learn_by_you.values_list('user_id'),role = 'Teach')
             
             users_can_teach_and_learn_by_you =users_learn_by_you.filter(
                 skill__in =[s.skill for s in skills_user_teach])
@@ -306,10 +302,7 @@ class Match (APIView):
             user_skill= User.objects.filter (id__in=user_profile_skill.values_list('user_id'))
             Learn_skill_data= Skill.objects.filter (id__in=users_can_teach_and_learn_by_you.values_list('skill_id'))
             teach_skill_data= Skill.objects.filter (id__in=users_can_teach_you.values_list('skill'))
-            
-            # return Response(SkillSerializer(teach_skill_data, many=True).data)
-            # return Response(UserSkillSerializer(users_can_teach_you, many=True).data)
-            
+                        
             return Response({'teach_skill_data': SkillSerializer(teach_skill_data, many=True).data,
                 'Learn_skill_data':SkillSerializer(Learn_skill_data, many=True).data,
                 'user_match': UserSerializer(user_skill, many=True).data,

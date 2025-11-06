@@ -1,0 +1,32 @@
+services:
+  catcollectorspa:
+    image: postgres
+    container_name: SkillShare
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: user_admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: catcollectorspa
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_api
+    command: >
+      bash -c "
+              python manage.py makemigrations &&
+              python manage.py migrate &&
+              python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend/:/usr/src/backend/
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - catcollectorspa
+volumes:
+  postgres_data:
+  
